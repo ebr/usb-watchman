@@ -20,8 +20,10 @@ def decode_device_info(device):
 	
 	vendor = device['ID_VENDOR'].replace('_',' ')
 	model = device['ID_MODEL'].replace('_',' ')
-	serial = device['ID_SERIAL_SHORT']
-	
+	try:
+		serial = device['ID_SERIAL_SHORT']
+	except:
+		serial = device['ID_SERIAL']
 	return({'vendor':vendor, 'model':model, 'serial':serial})
 
 
@@ -66,13 +68,16 @@ def print_device_event(device):
 		#print(timestamp()+" | Device {0[vendor]} {0[model]} with serial number {0[serial]} was removed".format(current_devices[device[devname][1]]))
 		print("device removed")
 	
-	formatted_listing(current_devices)
+	
 	
 def process_device_event(device):
+
+	global current_devices
 	
 	
 	log_device_event(device)
 	print_device_event(device)
+	formatted_listing(current_devices)
 	
 
 
