@@ -11,6 +11,18 @@ class Device(models.Model):
 	
 	def __unicode__(self):
 		return self.name
+		
+	def last_event(self):
+		return self.event_set.latest('timestamp')
+		
+	def current_state(self):
+		return str(self.event_set.latest('timestamp').event_type) ## This uses the last state change in database to determine current state. Is there a better way?
+		
+	def connected(self):
+		return self.current_state() == "Connected"
+		
+	connected.boolean = True
+
 	
 class Event(models.Model):
 	device = models.ForeignKey(Device)
@@ -18,5 +30,6 @@ class Event(models.Model):
 	event_type = models.CharField(max_length=20)
 	
 	def __unicode__(self):
-		return (self.timestamp.isoformat() + ": " + self.event_type + ": " + self.device.name )
+# 		return (self.timestamp.isoformat() + ": " + self.event_type + ": " + self.device.name )
+		return (self.event_type + " " + self.timestamp.isoformat())
 	 
