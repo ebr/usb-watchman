@@ -54,3 +54,5 @@ class Event(models.Model):
 		return "Event " + str(self.id)		
 		
 	get_latest_by = 'timestamp'
+
+	
