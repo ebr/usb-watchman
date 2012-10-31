@@ -1,9 +1,14 @@
 #!/usr/bin/env python
 import os
 import sys
+
+sys.path.append('/usr/bin/python')
+os.environ['DJANGO_SETTINGS_MODULE'] = 'usbwatchman.settings'
+
 import pyudev
-from models import Device, Event
 from django.utils import timezone
+
+from tracker.models import Device, Event
 
 context = pyudev.Context()
 monitor = pyudev.Monitor.from_netlink(context)
@@ -23,32 +28,36 @@ def device_data(raw_data):
 	return vendor, model, serial 
 
 
-def log_event(device, event_type):
-
-	device.event_set.create(timestamp=timezone.now(), event_type = event_type)
-
-	
 def get_device(device_data):
-	'''get the device based on given data. if device is not found, create it and save to database. Also log a "new device" event. then return the device.'''
+	''' return the device from database based on given data. 
+		if device is not found, create it.'''
 
 	try:
 		d = Device.objects.get(serial=device_data[2])
 	except:
-		initial_name = device_data[0] + ' ' +  device_data[1] + ' ' + device_data[2]
-		d = Device( name = initial_name, vendor = device_data[0], model = device_data[1], serial = device_data[2] )
-		d.save()
-		log_event(d, 'Registered')
-
+		d = new_device(device_data)
+				
 	return d
 	
+def new_device(device_data):
+	'''given device data, create a new Device and enter it into database. Also log an event of "new device" type'''
+	
+	initial_name = device_data[0] + ' ' +  device_data[1] + ' ' + device_data[2]
+	d = Device( name = initial_name, vendor = device_data[0], model = device_data[1], serial = device_data[2] )
+	d.save()
+	d.register()
+	
+	return d
+	
+	
 def process_device_event(raw_data):
-	
-	clean_data=device_data(raw_data)
-	
-	d = get_device(clean_data)
-	
-	log_event(d, raw_data.action)
-	
+
+	if raw_data.action == 'add':
+		clean_data=device_data(raw_data)
+		d = get_device(clean_data)
+		d.connect()
+	elif raw_data.action == "remove":
+		print raw_data	
 
 
 observer = pyudev.MonitorObserver(monitor, callback=process_device_event, name='monitor-observer')
@@ -56,7 +65,5 @@ observer.daemon = False
 
 
 if __name__ == "__main__":
-    
-    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "usbwatchman.settings")
-    
+        
     observer.start()

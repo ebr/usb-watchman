@@ -17,15 +17,13 @@ class Device(models.Model):
 		if self.has_events():
 			return self.event_set.latest()
 		else:
-			return "Device has no events"
-		## what if no events? 
+			return "Device has no events" 
 		
 	def current_state(self):
 		if self.has_events():
 			return str(self.event_set.latest('timestamp').event_type) ## This uses the last state change in database to determine current state. Is there a better way?
 		else:
 			return "Device has no events"
-		## what if no events?
 		
 	def connected(self):
 		return self.current_state() == "Added"
@@ -38,6 +36,9 @@ class Device(models.Model):
 
 	def disconnect(self):
 		self.event_set.create(event_type='Removed', timestamp=timezone.now())
+		
+	def register(self):
+		self.event_set.create(event_type='Registered', timestamp=timezone.now())
 	
 
 	def has_events(self):
@@ -55,4 +56,3 @@ class Event(models.Model):
 		
 	get_latest_by = 'timestamp'
 
-	
